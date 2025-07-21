@@ -12,6 +12,7 @@ from qiime2.plugin import (Plugin, Int, Float, Range, Metadata, Str, Bool,
                            Choices, MetadataColumn, Categorical, List,
                            Citations, TypeMatch, TypeMap)
 from q2_types.feature_table import FeatureTable
+from q2_types.metadata import ImmutableMetadata
 from q2_pepsirf.format_types import Zscore
 
 
@@ -22,6 +23,22 @@ plugin = Plugin(
     package='q2_epitope',
     short_description=(''),
     description=('')
+)
+
+plugin.methods.register_function(
+    function=q2_epitope.create_epitope_map,
+    inputs={},
+    parameters={
+        "metadata": qiime2.plugin.Metadata,
+    },
+    outputs=[
+        ("epitope_map", ImmutableMetadata)
+    ],
+    input_descriptions={},
+    parameter_descriptions={"metadata": ""},
+    output_descriptions={"epitope_map": ""},
+    name="create epitope map",
+    description="create epitope map"
 )
 
 plugin.methods.register_function(
