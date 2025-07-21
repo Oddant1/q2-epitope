@@ -6,16 +6,10 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import os
-import qiime2
 import numpy as np
 import pandas as pd
 
 from biom.table import Table
-
-from q2_pepsirf.format_types import (PepsirfContingencyTSVFormat,
-                                     EpitopeFormat, MappedEpitopeFormat)
-from q2_types.feature_table import BIOMV210Format
 
 
 def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
@@ -44,9 +38,9 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
 
 # We need a good format for the cleaned up metadata
 def zscore(
-        scores: pd.DataFrame,
-        epitope: pd.DataFrame
-    ) -> Table:
+            scores: pd.DataFrame,
+            epitope: pd.DataFrame
+        ) -> Table:
     observations = list(epitope.index)
     samples = list(scores.index)
 

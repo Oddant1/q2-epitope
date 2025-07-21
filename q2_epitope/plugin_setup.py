@@ -6,13 +6,9 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import qiime2
 import q2_epitope
-from qiime2.plugin import (Plugin, Int, Float, Range, Metadata, Str, Bool,
-                           Choices, MetadataColumn, Categorical, List,
-                           Citations, TypeMatch, TypeMap)
+from qiime2.plugin import Plugin
 from q2_types.feature_table import FeatureTable
-from q2_types.metadata import ImmutableMetadata
 from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope
 
 
@@ -27,7 +23,7 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=q2_epitope.create_epitope_map,
-    inputs={'epitope': FeatureTable[Epitope] },
+    inputs={'epitope': FeatureTable[Epitope]},
     parameters={},
     outputs=[
         ('epitope_map', FeatureTable[MappedEpitope])
