@@ -29,32 +29,32 @@ plugin.methods.register_function(
     function=q2_epitope.create_epitope_map,
     inputs={},
     parameters={
-        "metadata": qiime2.plugin.Metadata,
+        'metadata': qiime2.plugin.Metadata,
     },
     outputs=[
-        ("epitope_map", ImmutableMetadata)
+        ('epitope_map', ImmutableMetadata)
     ],
     input_descriptions={},
-    parameter_descriptions={"metadata": ""},
-    output_descriptions={"epitope_map": ""},
-    name="create epitope map",
-    description="create epitope map"
+    parameter_descriptions={'metadata': ''},
+    output_descriptions={'epitope_map': ''},
+    name='create epitope map',
+    description='create epitope map'
 )
 
 plugin.methods.register_function(
     function=q2_epitope.zscore,
     inputs={
-        "scores": FeatureTable[Zscore],
+        'scores': FeatureTable[Zscore],
     },
     parameters={
-        "metadata": qiime2.plugin.Metadata,
+        'metadata': qiime2.plugin.Metadata,
     },
     outputs=[
-        ("zscore_map", FeatureTable[Zscore]),
+        ('zscore_map', FeatureTable[Zscore]),
     ],
-    input_descriptions={"scores": ""},
-    parameter_descriptions={"metadata": ""},
-    output_descriptions={"zscore_map": ""},
-    name="zscore",
-    description="zscore",
+    input_descriptions={'scores': ''},
+    parameter_descriptions={'metadata': ''},
+    output_descriptions={'zscore_map': ''},
+    name='zscore',
+    description='zscore',
 )
