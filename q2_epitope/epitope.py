@@ -69,7 +69,4 @@ def zscore(
     data = np.array(data)
     table = Table(data, observations, samples)
 
-    with open('./delete.tsv', 'w') as fh:
-        table.to_tsv(direct_io=fh, observation_column_name='Sequence name')
-
     return table
