@@ -36,7 +36,6 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
-# We need a good format for the cleaned up metadata
 def zscore(
             scores: pd.DataFrame,
             epitope: pd.DataFrame
