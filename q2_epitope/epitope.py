@@ -13,56 +13,50 @@ import pandas as pd
 
 from biom.table import Table
 
-from q2_pepsirf.format_types import PepsirfContingencyTSVFormat
+from q2_pepsirf.format_types import (PepsirfContingencyTSVFormat,
+                                     EpitopeFormat, MappedEpitopeFormat)
 from q2_types.feature_table import BIOMV210Format
 
 
-def create_epitope_map() -> pd.DataFrame:
-    df = pd.read_csv("/home/anthony/Downloads/IN2_metadata.tsv", sep="\t", low_memory=False)
+def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
+    epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
+    epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
+    epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
+    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].fillna('Peptide_NA')
+    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].str.split(';')
 
-    df['SpeciesID'] = df['SpeciesID'].str.split(';')
-    df['ClusterID'] = df['ClusterID'].fillna('clusterNA')
-    df['ClusterID'] = df['ClusterID'].str.split(';')
-    df['EpitopeWindow'] = df['EpitopeWindow'].fillna('Peptide_NA')
-    df['EpitopeWindow'] = df['EpitopeWindow'].str.split(';')
+    epitope = epitope.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
 
-    df = df.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
-
-    df.drop_duplicates(inplace=True)
+    epitope.drop_duplicates(inplace=True)
 
     def combine(row):
         return f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
 
-    df['Epitope'] = df.apply(combine, axis=1)
+    epitope['Epitope'] = epitope.apply(combine, axis=1)
 
-    df2 = df[['Epitope', 'CodeName']]
+    mapped = epitope[['Epitope', 'CodeName']]
 
-    df2 = df.groupby('Epitope')['CodeName'].agg(list).reset_index()
-    df2['CodeName'] = df2['CodeName'].transform(lambda x: ';'.join(x))
+    mapped = epitope.groupby('Epitope')['CodeName'].agg(list).reset_index()
+    mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
 
-    df2.to_csv('~/df2.tsv', sep='\t')
+    return mapped
 
 
 # We need a good format for the cleaned up metadata
 def zscore(
-        scores: PepsirfContingencyTSVFormat,
-        metadata: qiime2.Metadata
+        scores: pd.DataFrame,
+        epitope: pd.DataFrame
     ) -> Table:
-    scores = "%s" % os.path.abspath(str(scores))
-    df_z = pd.read_csv(scores, sep='\t', index_col=0)
-    df_epitope = metadata.to_dataframe()
-
-    observations = list(df_epitope.index)
-    samples = list(df_z.columns[1:])
+    observations = list(epitope.index)
+    samples = list(scores.index)
 
     data = []
-
-    for _, row in df_epitope.iterrows():
+    for _, row in epitope.iterrows():
         max_z_scores_per_sample = []
-        z_scores = df_z[df_z.index.isin(row['CodeName'].split(';'))]
-
-        for column in z_scores.columns[1:]:
-            max_z_scores_per_sample.append(max(z_scores[column].values, key=abs))
+        split_row = row['CodeName'].split(';')
+        z_scores = scores.columns[scores.columns.isin(split_row)]
+        for _, row in scores[z_scores.values].iterrows():
+            max_z_scores_per_sample.append(max(row.values, key=abs))
 
         data.append(max_z_scores_per_sample)
 

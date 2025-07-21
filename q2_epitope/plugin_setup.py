@@ -13,7 +13,7 @@ from qiime2.plugin import (Plugin, Int, Float, Range, Metadata, Str, Bool,
                            Citations, TypeMatch, TypeMap)
 from q2_types.feature_table import FeatureTable
 from q2_types.metadata import ImmutableMetadata
-from q2_pepsirf.format_types import Zscore
+from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope
 
 
 plugin = Plugin(
@@ -27,15 +27,13 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=q2_epitope.create_epitope_map,
-    inputs={},
-    parameters={
-        'metadata': qiime2.plugin.Metadata,
-    },
+    inputs={'epitope': FeatureTable[Epitope] },
+    parameters={},
     outputs=[
-        ('epitope_map', ImmutableMetadata)
+        ('epitope_map', FeatureTable[MappedEpitope])
     ],
-    input_descriptions={},
-    parameter_descriptions={'metadata': ''},
+    input_descriptions={'epitope': ''},
+    parameter_descriptions={},
     output_descriptions={'epitope_map': ''},
     name='create epitope map',
     description='create epitope map'
@@ -45,15 +43,14 @@ plugin.methods.register_function(
     function=q2_epitope.zscore,
     inputs={
         'scores': FeatureTable[Zscore],
+        'epitope': FeatureTable[MappedEpitope]
     },
-    parameters={
-        'metadata': qiime2.plugin.Metadata,
-    },
+    parameters={},
     outputs=[
         ('zscore_map', FeatureTable[Zscore]),
     ],
-    input_descriptions={'scores': ''},
-    parameter_descriptions={'metadata': ''},
+    input_descriptions={'scores': '', 'epitope': ''},
+    parameter_descriptions={},
     output_descriptions={'zscore_map': ''},
     name='zscore',
     description='zscore',
