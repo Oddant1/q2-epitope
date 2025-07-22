@@ -13,24 +13,11 @@ from biom.table import Table
 
 
 def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
-    epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
-    epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
-    epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
-    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].fillna('Peptide_NA')
-    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].str.split(';')
+    epitope = _create_EpitopeID_row(epitope)
 
-    epitope = epitope.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
+    mapped = epitope[['EpitopeID', 'CodeName']]
 
-    epitope.drop_duplicates(inplace=True)
-
-    def combine(row):
-        return f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
-
-    epitope['Epitope'] = epitope.apply(combine, axis=1)
-
-    mapped = epitope[['Epitope', 'CodeName']]
-
-    mapped = epitope.groupby('Epitope')['CodeName'].agg(list).reset_index()
+    mapped = epitope.groupby('EpitopeID')['CodeName'].agg(list).reset_index()
     mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
 
     return mapped
@@ -57,3 +44,22 @@ def zscore(
     table = Table(data, observations, samples)
 
     return table
+
+
+def _create_EpitopeID_row(epitope):
+    epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
+    epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
+    epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
+    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].fillna('Peptide_NA')
+    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].str.split(';')
+
+    epitope = epitope.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
+
+    epitope.drop_duplicates(inplace=True)
+
+    def combine(row):
+        return f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
+
+    epitope['EpitopeID'] = epitope.apply(combine, axis=1)
+
+    return epitope
