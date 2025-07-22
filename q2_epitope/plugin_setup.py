@@ -51,3 +51,18 @@ plugin.methods.register_function(
     name='zscore',
     description='zscore',
 )
+
+plugin.methods.register_function(
+    function=q2_epitope.taxa_to_epitope,
+    inputs={
+        'epitope': FeatureTable[Epitope],
+    },
+    parameters={},
+    outputs=[
+        ('taxa_map', FeatureTable[Epitope]),
+    ],
+    input_descriptions={'epitope': ''},
+    parameter_descriptions={},
+    name='taxa_map',
+    description='taxa_map',
+)

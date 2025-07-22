@@ -46,6 +46,20 @@ def zscore(
     return table
 
 
+def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
+    epitope = _create_EpitopeID_row(epitope)
+
+    mapped = epitope[['EpitopeID', 'SpeciesID']]
+    mapped = mapped.groupby(['SpeciesID'])
+    mapped = mapped['EpitopeID'].unique()
+    mapped = mapped.reset_index()
+    mapped.set_index('SpeciesID', inplace=True)
+
+    mapped['EpitopeID'] = mapped['EpitopeID'].transform(lambda x: ';'.join(x))
+
+    return mapped
+
+
 def _create_EpitopeID_row(epitope):
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
     epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
