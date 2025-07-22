@@ -24,22 +24,29 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
+# TODO: Not convinced there is any point returning a biom.Table from this
 def zscore(
             scores: pd.DataFrame,
             epitope: pd.DataFrame
         ) -> Table:
-    observations = list(epitope.index)
+    scores.dropna(axis=1, inplace=True)
     samples = list(scores.index)
+    observations = list(epitope.index)
 
     data = []
     for _, row in epitope.iterrows():
         max_z_scores_per_sample = []
         split_row = row['CodeName'].split(';')
         z_scores = scores.columns[scores.columns.isin(split_row)]
-        for _, row in scores[z_scores.values].iterrows():
-            max_z_scores_per_sample.append(max(row.values, key=abs))
 
-        data.append(max_z_scores_per_sample)
+        if not z_scores.empty:
+            for _, row in scores[z_scores.values].iterrows():
+                max_z_scores_per_sample.append(max(row.values, key=abs))
+
+        if len(max_z_scores_per_sample) != 0:
+            data.append(max_z_scores_per_sample)
+        else:
+            observations.remove(row.name)
 
     data = np.array(data)
     table = Table(data, observations, samples)
