@@ -14,11 +14,12 @@ from biom.table import Table
 
 def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope)
+    epitope = epitope.reset_index()
 
     mapped = epitope[['EpitopeID', 'CodeName']]
-
     mapped = epitope.groupby('EpitopeID')['CodeName'].agg(list).reset_index()
     mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
+    mapped.set_index('EpitopeID', inplace=True)
 
     return mapped
 
