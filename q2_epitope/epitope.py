@@ -29,7 +29,7 @@ def zscore(
             scores: pd.DataFrame,
             epitope: pd.DataFrame
         ) -> Table:
-    scores.dropna(axis=1, inplace=True)
+    scores.fillna(value=0, axis=1, inplace=True)
     samples = list(scores.index)
     observations = list(epitope.index)
 
@@ -39,14 +39,10 @@ def zscore(
         split_row = row['CodeName'].split(';')
         z_scores = scores.columns[scores.columns.isin(split_row)]
 
-        if not z_scores.empty:
-            for _, row in scores[z_scores.values].iterrows():
-                max_z_scores_per_sample.append(max(row.values, key=abs))
+        for _, row in scores[z_scores.values].iterrows():
+            max_z_scores_per_sample.append(max(row.values, key=abs))
 
-        if len(max_z_scores_per_sample) != 0:
-            data.append(max_z_scores_per_sample)
-        else:
-            observations.remove(row.name)
+        data.append(max_z_scores_per_sample)
 
     data = np.array(data)
     table = Table(data, observations, samples)
