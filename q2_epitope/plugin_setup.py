@@ -9,7 +9,7 @@
 import q2_epitope
 from qiime2.plugin import Plugin
 from q2_types.feature_table import FeatureTable
-from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope
+from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope, GMT
 
 
 plugin = Plugin(
@@ -59,10 +59,10 @@ plugin.methods.register_function(
     },
     parameters={},
     outputs=[
-        ('taxa_map', FeatureTable[Epitope]),
+        ('epitope_map', GMT),
     ],
     input_descriptions={'epitope': ''},
     parameter_descriptions={},
-    name='taxa_map',
-    description='taxa_map',
+    name='epitope_map',
+    description='epitop_map',
 )

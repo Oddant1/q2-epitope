@@ -59,7 +59,7 @@ def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
     mapped = mapped.reset_index()
     mapped.set_index('SpeciesID', inplace=True)
 
-    mapped['EpitopeID'] = mapped['EpitopeID'].transform(lambda x: ';'.join(x))
+    mapped['EpitopeID'] = mapped['EpitopeID'].transform(lambda x: ' '.join(x))
 
     return mapped
 
