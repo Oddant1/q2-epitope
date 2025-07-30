@@ -8,8 +8,9 @@
 
 import numpy as np
 import pandas as pd
+from biom import Table
 
-from biom.table import Table
+from q2_types.feature_table import BIOMV210Format
 
 
 def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
@@ -24,11 +25,10 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
-# TODO: Not convinced there is any point returning a biom.Table from this
 def zscore(
             scores: pd.DataFrame,
             epitope: pd.DataFrame
-        ) -> Table:
+        ) -> BIOMV210Format:
     scores.fillna(value=0, axis=1, inplace=True)
     samples = list(scores.index)
     observations = list(epitope.index)
@@ -47,7 +47,11 @@ def zscore(
     data = np.array(data)
     table = Table(data, observations, samples)
 
-    return table
+    result = BIOMV210Format()
+    with result.open() as fh:
+        table.to_hdf5(fh, generated_by="q2-pepsirf for pepsirf")
+
+    return result
 
 
 def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
