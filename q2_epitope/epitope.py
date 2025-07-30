@@ -37,6 +37,9 @@ def zscore(
     for _, row in epitope.iterrows():
         max_z_scores_per_sample = []
         split_row = row['CodeName'].split(';')
+
+        # Filter the scores dataframe to only include columns corresponding to
+        # the peptides we're looking at
         z_scores = scores.columns[scores.columns.isin(split_row)]
 
         for _, row in scores[z_scores.values].iterrows():
