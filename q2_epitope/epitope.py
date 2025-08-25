@@ -16,10 +16,12 @@ from q2_types.feature_table import BIOMV210Format
 def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope)
     epitope = epitope.reset_index()
+    epitope = _create_SpeciesSubtype_row(epitope)
 
-    mapped = epitope[['EpitopeID', 'CodeName']]
-    mapped = epitope.groupby('EpitopeID')['CodeName'].agg(list).reset_index()
+    mapped = epitope[['EpitopeID', 'CodeName', 'SpeciesSubtype']]
+    mapped = mapped.groupby('EpitopeID')[['CodeName', 'SpeciesSubtype']].agg(list).reset_index()
     mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
+    mapped['SpeciesSubtype'] = mapped['SpeciesSubtype'].transform(lambda x: ';'.join(x))
     mapped.set_index('EpitopeID', inplace=True)
 
     return mapped
@@ -69,6 +71,11 @@ def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
+def identify_enriched_subtypes(enrichment: pd.DataFrame,
+                               epitope_map: pd.DataFrame):
+    pass
+
+
 def _create_EpitopeID_row(epitope):
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
     epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
@@ -77,12 +84,31 @@ def _create_EpitopeID_row(epitope):
     epitope['EpitopeWindow'] = epitope['EpitopeWindow'].str.split(';')
 
     epitope = epitope.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
-
     epitope.drop_duplicates(inplace=True)
 
     def combine(row):
         return f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
 
     epitope['EpitopeID'] = epitope.apply(combine, axis=1)
+
+    return epitope
+
+
+def _create_SpeciesSubtype_row(epitope):
+    epitope['Species'] = epitope['Species'].fillna('speciesNA')
+    epitope['Subtype'] = epitope['Subtype'].fillna('subtypeNA')
+
+    def combine(row):
+        combined_row = ''
+        species = row['Species'].split(';')
+        subtype = row['Subtype'].split(';')
+        zipped = zip(species, subtype)
+
+        for species, subtype in zipped:
+            combined_row += f'{species}:{subtype};'
+
+        return combined_row[:-1]
+
+    epitope['SpeciesSubtype'] = epitope.apply(combine, axis=1)
 
     return epitope
