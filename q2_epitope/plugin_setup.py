@@ -17,8 +17,8 @@ plugin = Plugin(
     version=q2_epitope.__version__,
     website='https://github.com/qiime2/q2-epitope',
     package='q2_epitope',
-    short_description=(''),
-    description=('')
+    short_description=('Used to manipulate pepsirf epitope data in QIIME 2'),
+    description=('Used to manipulate pepsirf epitope data in QIIME 2')
 )
 
 plugin.methods.register_function(
@@ -28,11 +28,16 @@ plugin.methods.register_function(
     outputs=[
         ('epitope_map', FeatureTable[MappedEpitope])
     ],
-    input_descriptions={'epitope': ''},
+    input_descriptions={'epitope': 'FeatureTable containing at least '
+                        'CodeName, SpeciesID, ClusterID, EpitopeWindow, '
+                        'Species, and Subtype columns'},
     parameter_descriptions={},
-    output_descriptions={'epitope_map': ''},
+    output_descriptions={'epitope_map': 'FeatureTable containing columns '
+                         'described in action descriptions.'},
     name='create epitope map',
-    description='create epitope map'
+    description='Creates the fully defined epitope name '
+                'species_clusterID_EpitopeWindow mapped to peptide code names '
+                'and subtypes the epitope is associated with.'
 )
 
 plugin.methods.register_function(
@@ -45,11 +50,21 @@ plugin.methods.register_function(
     outputs=[
         ('zscore_map', FeatureTable[Zscore]),
     ],
-    input_descriptions={'scores': '', 'epitope': ''},
+    input_descriptions={
+        'scores': 'FeatureTable containing the code names of peptides and '
+                  'their per sample z scores',
+        'epitope': 'FeatureTable containing epitopes and their associated '
+                   'peptides and subtypes'
+    },
     parameter_descriptions={},
-    output_descriptions={'zscore_map': ''},
+    output_descriptions={
+        'zscore_map': 'FeatureTable containing the epitopes and their per '
+                      'sample z scores.'
+    },
     name='zscore',
-    description='zscore',
+    description='Creates a map of epitopes to their max z-score within each '
+                'sample. The maxes are taken by finding the per sample maxes '
+                'among z scores of peptides associated with a given epitope',
 )
 
 plugin.methods.register_function(
@@ -61,8 +76,15 @@ plugin.methods.register_function(
     outputs=[
         ('epitope_map', GMT),
     ],
-    input_descriptions={'epitope': ''},
+    input_descriptions={
+        'epitope': 'Feature table containing at least SpeciesID, ClusterID, '
+                   'and EpitopeWindow columns'
+    },
     parameter_descriptions={},
+    output_descriptions={
+        'epitope_map': 'GMT mapping SpeciesIDs to associated epitopes.'
+    },
     name='epitope_map',
-    description='epitop_map',
+    description='Creates a GMT file mapping SpeciesIDs to their associated '
+                'epitopes',
 )
