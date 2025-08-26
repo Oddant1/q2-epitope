@@ -19,9 +19,13 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     epitope = _create_SpeciesSubtype_row(epitope)
 
     mapped = epitope[['EpitopeID', 'CodeName', 'SpeciesSubtype']]
-    mapped = mapped.groupby('EpitopeID')[['CodeName', 'SpeciesSubtype']].agg(list).reset_index()
+    mapped = \
+        mapped.groupby(
+            'EpitopeID')[
+                ['CodeName', 'SpeciesSubtype']].agg(list).reset_index()
     mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
-    mapped['SpeciesSubtype'] = mapped['SpeciesSubtype'].transform(lambda x: ';'.join(x))
+    mapped['SpeciesSubtype'] = \
+        mapped['SpeciesSubtype'].transform(lambda x: ';'.join(x))
     mapped.set_index('EpitopeID', inplace=True)
 
     return mapped
