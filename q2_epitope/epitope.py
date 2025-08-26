@@ -71,11 +71,6 @@ def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
-def identify_enriched_subtypes(enrichment: pd.DataFrame,
-                               epitope_map: pd.DataFrame):
-    pass
-
-
 def _create_EpitopeID_row(epitope):
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
     epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
