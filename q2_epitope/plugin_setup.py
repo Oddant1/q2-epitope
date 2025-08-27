@@ -74,7 +74,7 @@ plugin.methods.register_function(
     },
     parameters={},
     outputs=[
-        ('epitope_map', GMT),
+        ('epitope_GMT', GMT),
     ],
     input_descriptions={
         'epitope': 'Feature table containing at least SpeciesID, ClusterID, '
@@ -82,9 +82,9 @@ plugin.methods.register_function(
     },
     parameter_descriptions={},
     output_descriptions={
-        'epitope_map': 'GMT mapping SpeciesIDs to associated epitopes.'
+        'epitope_GMT': 'GMT mapping SpeciesIDs to associated epitopes.'
     },
-    name='epitope_map',
+    name='epitope_GMT',
     description='Creates a GMT file mapping SpeciesIDs to their associated '
                 'epitopes',
 )
