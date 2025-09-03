@@ -40,6 +40,6 @@ For the time being, you will unfortunately have to unzip your artifacts to use t
 
 Then run q2-psea make-psea-table:
 
-`qiime psea make-psea-table --p-scores-file ./epitope-zscores/pepsirf-table.tsv --p-peptide-sets-file ./epitope-gmt/map.gmt --p-mapped-epitope-file ./epitope-map/mapped-epitope.tsv`
+`qiime psea make-psea-table --p-scores-file ./epitope-zscores/pepsirf-table.tsv --p-peptide-sets-file ./epitope-gmt/map.gmt --p-mapped-epitope-file ./epitope-map/mapped-epitope.tsv --p-taxa-file ./PV2species.tsv`
 
 all other parameters set as desired/as would be necessary previously. The outputs will now be generated using per epitope data. The new enriched subtype outputs will be saved to the folder specified by the `--p-enriched-subtypes-dir` defaults to `./psea_enriched_subtypes_tables`.
