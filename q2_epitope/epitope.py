@@ -18,37 +18,38 @@ def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
     epitope = epitope.reset_index()
     epitope = _create_SpeciesSubtype_row(epitope)
 
-    mapped = epitope[['EpitopeID', 'CodeName', 'SpeciesSubtype']]
-    mapped = \
-        mapped.groupby(
+    epitope_map = epitope[['EpitopeID', 'CodeName', 'SpeciesSubtype']]
+    epitope_map = \
+        epitope_map.groupby(
             'EpitopeID')[
                 ['CodeName', 'SpeciesSubtype']].agg(list).reset_index()
-    mapped['CodeName'] = mapped['CodeName'].transform(lambda x: ';'.join(x))
-    mapped['SpeciesSubtype'] = \
-        mapped['SpeciesSubtype'].transform(lambda x: ';'.join(x))
-    mapped.set_index('EpitopeID', inplace=True)
+    epitope_map['CodeName'] = \
+        epitope_map['CodeName'].transform(lambda x: ';'.join(x))
+    epitope_map['SpeciesSubtype'] = \
+        epitope_map['SpeciesSubtype'].transform(lambda x: ';'.join(x))
+    epitope_map.set_index('EpitopeID', inplace=True)
 
-    return mapped
+    return epitope_map
 
 
-def zscore(
-            scores: pd.DataFrame,
-            epitope: pd.DataFrame
+def epitope_zscore(
+            zscores: pd.DataFrame,
+            epitope_map: pd.DataFrame
         ) -> BIOMV210Format:
-    scores.fillna(value=0, axis=1, inplace=True)
-    samples = list(scores.index)
-    observations = list(epitope.index)
+    zscores.fillna(value=0, axis=1, inplace=True)
+    samples = list(zscores.index)
+    observations = list(epitope_map.index)
 
     data = []
-    for _, row in epitope.iterrows():
+    for _, row in epitope_map.iterrows():
         max_z_scores_per_sample = []
         split_row = row['CodeName'].split(';')
 
         # Filter the scores dataframe to only include columns corresponding to
         # the peptides we're looking at
-        z_scores = scores.columns[scores.columns.isin(split_row)]
+        z_scores = zscores.columns[zscores.columns.isin(split_row)]
 
-        for _, row in scores[z_scores.values].iterrows():
+        for _, row in zscores[z_scores.values].iterrows():
             max_z_scores_per_sample.append(max(row.values, key=abs))
 
         data.append(max_z_scores_per_sample)

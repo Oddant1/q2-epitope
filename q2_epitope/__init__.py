@@ -6,11 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-__all__ = ['zscore', 'create_epitope_map', 'taxa_to_epitope']
+__all__ = ['epitope_zscore', 'create_epitope_map', 'taxa_to_epitope']
 
 try:
     from ._version import __version__
 except ModuleNotFoundError:
     __version__ = '0.0.0+notfound'
 
-from .epitope import zscore, create_epitope_map, taxa_to_epitope
+from .epitope import epitope_zscore, create_epitope_map, taxa_to_epitope

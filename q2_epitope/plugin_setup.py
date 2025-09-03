@@ -41,25 +41,25 @@ plugin.methods.register_function(
 )
 
 plugin.methods.register_function(
-    function=q2_epitope.zscore,
+    function=q2_epitope.epitope_zscore,
     inputs={
-        'scores': FeatureTable[Zscore],
-        'epitope': FeatureTable[MappedEpitope]
+        'zscores': FeatureTable[Zscore],
+        'epitope_map': FeatureTable[MappedEpitope]
     },
     parameters={},
     outputs=[
-        ('zscore_map', FeatureTable[Zscore]),
+        ('epitope_zscore', FeatureTable[Zscore]),
     ],
     input_descriptions={
-        'scores': 'FeatureTable containing the code names of peptides and '
-                  'their per sample z scores',
-        'epitope': 'FeatureTable containing epitopes and their associated '
-                   'peptides and subtypes'
+        'zscores': 'FeatureTable containing the code names of peptides and '
+                   'their per sample z scores',
+        'epitope_map': 'FeatureTable containing epitopes and their associated '
+                       'peptides and subtypes'
     },
     parameter_descriptions={},
     output_descriptions={
-        'zscore_map': 'FeatureTable containing the epitopes and their per '
-                      'sample z scores.'
+        'epitope_zscore': 'FeatureTable containing the epitopes and their per '
+                          'sample z scores.'
     },
     name='zscore',
     description='Creates a map of epitopes to their max z-score within each '
@@ -74,7 +74,7 @@ plugin.methods.register_function(
     },
     parameters={},
     outputs=[
-        ('epitope_GMT', GMT),
+        ('epitope_gmt', GMT),
     ],
     input_descriptions={
         'epitope': 'Feature table containing at least SpeciesID, ClusterID, '
@@ -82,9 +82,9 @@ plugin.methods.register_function(
     },
     parameter_descriptions={},
     output_descriptions={
-        'epitope_GMT': 'GMT mapping SpeciesIDs to associated epitopes.'
+        'epitope_gmt': 'GMT mapping SpeciesIDs to associated epitopes.'
     },
-    name='epitope_GMT',
+    name='taxa to epitope',
     description='Creates a GMT file mapping SpeciesIDs to their associated '
                 'epitopes',
 )
