@@ -1,8 +1,11 @@
-# Creating the environment
+# Install and activate environment
 
-`conda env create -n <env-name> -f env.yml`
+Run the following two commands:
 
-`conda activate <env name>`
+```
+conda env create -n q2-epitope -f https://raw.githubusercontent.com/Oddant1/q2-epitope/refs/heads/main/env.yml
+conda activate q2-epitope
+```
 
 # Prepping epitope data with q2-epitope
 
