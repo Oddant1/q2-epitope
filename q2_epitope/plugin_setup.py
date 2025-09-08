@@ -38,7 +38,7 @@ plugin.methods.register_function(
     name='create epitope map',
     description='Creates the fully defined epitope name '
                 'species_clusterID_EpitopeWindow mapped to peptide code names '
-                'and subtypes the epitope is associated with.'
+                'and species/subtypes the epitope is associated with.'
 )
 
 plugin.methods.register_function(
