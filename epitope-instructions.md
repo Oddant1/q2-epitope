@@ -1,14 +1,27 @@
-# Creating the environment
+# Install using conda, activate the environment
 
-`conda env create -n <env-name> -f env.yml`
+These install instructions assume that you have install conda, e.g., through [Miniforge](https://github.com/conda-forge/miniforge).
 
-`conda activate <env name>`
+Run the following command to create a new environment and install q2-epitope into it.
+
+```
+conda env create -n q2-epitope -f https://raw.githubusercontent.com/Oddant1/q2-epitope/refs/heads/main/env.yml
+```
+
+Activate the new environment:
+
+```
+conda activate q2-epitope
+```
 
 # Prepping epitope data with q2-epitope
 
-The file names in the import are the file names I was sent. I wasn't sure if it was ok to put the files in a public GitHub repo or not, so I didn't.
+The following steps use provided example data.
+We haven't yet put this into a GitHub repo/etc, as we didn't know if these were ok to share.
 
 1. Import peptipe/epitope metadata (I think this artifact only really needs to be created once per peptide/epitope library?):
+
+** Why are we creating a FeatureTable here? This should be FeatureData, I think. **
 
 `qiime tools import --type FeatureTable[Epitope] --input-path IN2_metadata.tsv --output-path epitope.qza`
 
@@ -40,6 +53,6 @@ For the time being, you will unfortunately have to unzip your artifacts to use t
 
 Then run q2-psea make-psea-table:
 
-`qiime psea make-psea-table --p-scores-file ./epitope-zscores/pepsirf-table.tsv --p-peptide-sets-file ./epitope-gmt/map.gmt --p-mapped-epitope-file ./epitope-map/mapped-epitope.tsv --p-species-taxa-file ./PV2species.tsv`
+`qiime psea make-psea-table --p-scores-file ./epitope-zscores/pepsirf-table.tsv --p-peptide-sets-file ./epitope-gmt/map.gmt --p-mapped-epitope-file ./epitope-map/mapped-epitope.tsv --p-species-taxa-file ./PV2species.tsv --p-pairs-file pairs.tsv --p-threshold 1 --output-dir make-psea-table-out`
 
 all other parameters set as desired/as would be necessary previously. The outputs will now be generated using per epitope data. The new enriched subtype outputs will be saved to the folder specified by the `--p-enriched-subtypes-dir` defaults to `./psea_enriched_subtypes_tables`.
