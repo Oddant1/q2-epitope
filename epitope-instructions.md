@@ -21,9 +21,13 @@ We haven't yet put this into a GitHub repo/etc, as we didn't know if these were 
 
 1. Import peptipe/epitope metadata (I think this artifact only really needs to be created once per peptide/epitope library?):
 
+<<<<<<< Updated upstream
 ** Why are we creating a FeatureTable here? This should be FeatureData, I think. **
 
 `qiime tools import --type FeatureTable[Epitope] --input-path IN2_metadata.tsv --output-path epitope.qza`
+=======
+`qiime tools import --type FeatureData[Epitope] --input-path IN2_metadata.tsv --output-path epitope.qza`
+>>>>>>> Stashed changes
 
 2. Import peptide z-scores file:
 

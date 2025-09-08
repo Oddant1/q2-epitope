@@ -8,6 +8,7 @@
 
 import q2_epitope
 from qiime2.plugin import Plugin
+from q2_types.feature_data import FeatureData
 from q2_types.feature_table import FeatureTable
 from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope, GMT
 
@@ -23,10 +24,10 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=q2_epitope.create_epitope_map,
-    inputs={'epitope': FeatureTable[Epitope]},
+    inputs={'epitope': FeatureData[Epitope]},
     parameters={},
     outputs=[
-        ('epitope_map', FeatureTable[MappedEpitope])
+        ('epitope_map', FeatureData[MappedEpitope])
     ],
     input_descriptions={'epitope': 'FeatureTable containing at least '
                         'CodeName, SpeciesID, ClusterID, EpitopeWindow, '
@@ -44,7 +45,7 @@ plugin.methods.register_function(
     function=q2_epitope.epitope_zscore,
     inputs={
         'zscores': FeatureTable[Zscore],
-        'epitope_map': FeatureTable[MappedEpitope]
+        'epitope_map': FeatureData[MappedEpitope]
     },
     parameters={},
     outputs=[
@@ -70,7 +71,7 @@ plugin.methods.register_function(
 plugin.methods.register_function(
     function=q2_epitope.taxa_to_epitope,
     inputs={
-        'epitope': FeatureTable[Epitope],
+        'epitope': FeatureData[Epitope],
     },
     parameters={},
     outputs=[
