@@ -21,27 +21,21 @@ We haven't yet put this into a GitHub repo/etc, as we didn't know if these were 
 
 1. Import peptipe/epitope metadata (I think this artifact only really needs to be created once per peptide/epitope library?):
 
-<<<<<<< Updated upstream
-** Why are we creating a FeatureTable here? This should be FeatureData, I think. **
-
-`qiime tools import --type FeatureTable[Epitope] --input-path IN2_metadata.tsv --output-path epitope.qza`
-=======
 `qiime tools import --type FeatureData[Epitope] --input-path IN2_metadata.tsv --output-path epitope.qza`
->>>>>>> Stashed changes
 
 2. Import peptide z-scores file:
 
 `qiime tools import --type FeatureTable[Zscore] --input-path IM0206_IN2_raw_3mm_Z-HDI75.tsv --output-path zscores.qza`
 
-3. Run qiime epitope create-epitope-map:
+3. Run qiime epitope create-epitope-map. This will put together the full epitope identifiers species_clusterID_EpitopeWindow and map them to the peptide codenames and species/subtypes those epitopes are associated with:
 
 `qiime epitope create-epitope-map --i-epitope epitope.qza --o-epitope-map epitope-map.qza`
 
-4. Run qiime epitope epitope-zscore:
+4. Run qiime epitope epitope-zscore. This maps the epitopes to their max z-scores within each sample. The maxes are taken by finding the per sample maxes among z-scores of peptides associated with a given epitope:
 
 `qiime epitope epitope-zscore --i-zscores zscores.qza --i-epitope-map epitope-map.qza --o-epitope-zscore epitope-zscores.qza`
 
-5. Run qiime epitope taxa-to-epitope:
+5. Run qiime epitope taxa-to-epitope. Creates a .gmt file mapping the speciesIDs to associated epitopes not associated peptides:
 
 `qiime epitope taxa-to-epitope --i-epitope epitope.qza --o-epitope-gmt epitope-gmt.qza`
 
