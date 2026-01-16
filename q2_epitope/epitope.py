@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import os
 import numpy as np
 import pandas as pd
 from biom import Table
@@ -64,8 +65,9 @@ def epitope_zscore(
     return result
 
 
-def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
-    epitope = _create_EpitopeID_row(epitope)
+def taxa_to_epitope(
+        epitope: pd.DataFrame, collapse: str='Bacterial') -> pd.DataFrame:
+    epitope = _create_EpitopeID_row(epitope, collapse)
 
     mapped = epitope[['EpitopeID', 'SpeciesID']]
     mapped = mapped.groupby(['SpeciesID'])
@@ -76,7 +78,7 @@ def taxa_to_epitope(epitope: pd.DataFrame) -> pd.DataFrame:
     return mapped
 
 
-def _create_EpitopeID_row(epitope):
+def _create_EpitopeID_row(epitope, collapse):
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
     epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
     epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
@@ -87,7 +89,11 @@ def _create_EpitopeID_row(epitope):
     epitope.drop_duplicates(inplace=True)
 
     def combine(row):
-        return f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
+        if collapse == 'Both' or row['Category'] == collapse:
+            return \
+                f"{row['SpeciesID']}_{row['ClusterID']}_{row['EpitopeWindow']}"
+
+        return row.name
 
     epitope['EpitopeID'] = epitope.apply(combine, axis=1)
 
@@ -112,3 +118,31 @@ def _create_SpeciesSubtype_row(epitope):
     epitope['SpeciesSubtype'] = epitope.apply(combine, axis=1)
 
     return epitope
+
+
+# Run PSEA and get the significant species based on p.adjust < .05 or some specified threshold
+# Look at core_enrichment column of that output for / separated peptide values for all output tables which are per sample
+def filter_psea_outputs(in_dir: str, out_path: str, threshold: float=.05):
+    filtered_df = pd.DataFrame()
+    for fp in os.listdir(in_dir):
+        fp = os.path.join(in_dir, fp)
+        df = pd.read_csv(fp, sep='\t')
+        df = df.loc[(df['p.adjust'] < threshold)]
+        filtered_df = pd.concat([filtered_df, df])
+
+    filtered_df.set_index('ID', inplace=True)
+    filtered_df.to_csv(out_path, sep='\t')
+
+    global_enriched = []
+    for row in filtered_df['core_enrichment']:
+        enriched = row.split('/')
+        global_enriched.extend(enriched)
+
+    global_enriched = set(global_enriched)
+
+
+# Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
+
+# Only collapse the viral peptides to epitope do not collapse the bacteria
+
+# NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient

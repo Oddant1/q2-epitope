@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import q2_epitope
-from qiime2.plugin import Plugin
+from qiime2.plugin import Plugin, Str, Float, Choices
 from q2_types.feature_data import FeatureData
 from q2_types.feature_table import FeatureTable
 from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope, GMT
@@ -73,7 +73,9 @@ plugin.methods.register_function(
     inputs={
         'epitope': FeatureData[Epitope],
     },
-    parameters={},
+    parameters={
+        'collapse': Str % Choices(['Bacterial', 'Viral', 'Both'])
+    },
     outputs=[
         ('epitope_gmt', GMT),
     ],
@@ -88,4 +90,24 @@ plugin.methods.register_function(
     name='taxa to epitope',
     description='Creates a GMT file mapping SpeciesIDs to their associated '
                 'epitopes',
+)
+
+plugin.methods.register_function(
+    function=q2_epitope.filter_psea_outputs,
+    inputs={},
+    parameters={
+        'in_dir': Str,
+        'out_path': Str,
+        'threshold': Float,
+    },
+    outputs=[],
+    input_descriptions={},
+    parameter_descriptions={
+        'in_dir': 'in',
+        'out_path': 'out',
+        'threshold': 'threshold',
+    },
+    output_descriptions={},
+    name='name',
+    description='description'
 )
