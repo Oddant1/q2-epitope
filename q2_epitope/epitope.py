@@ -120,27 +120,6 @@ def _create_SpeciesSubtype_row(epitope):
     return epitope
 
 
-# Run PSEA and get the significant species based on p.adjust < .05 or some specified threshold
-# Look at core_enrichment column of that output for / separated peptide values for all output tables which are per sample
-def filter_psea_outputs(in_dir: str, out_path: str, threshold: float=.05):
-    filtered_df = pd.DataFrame()
-    for fp in os.listdir(in_dir):
-        fp = os.path.join(in_dir, fp)
-        df = pd.read_csv(fp, sep='\t')
-        df = df.loc[(df['p.adjust'] < threshold)]
-        filtered_df = pd.concat([filtered_df, df])
-
-    filtered_df.set_index('ID', inplace=True)
-    filtered_df.to_csv(out_path, sep='\t')
-
-    global_enriched = []
-    for row in filtered_df['core_enrichment']:
-        enriched = row.split('/')
-        global_enriched.extend(enriched)
-
-    global_enriched = set(global_enriched)
-
-
 # Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
 
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
