@@ -66,7 +66,7 @@ def epitope_zscore(
 
 
 def taxa_to_epitope(
-        epitope: pd.DataFrame, collapse: str='Bacterial') -> pd.DataFrame:
+        epitope: pd.DataFrame, collapse: str='Viral') -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope, collapse)
 
     mapped = epitope[['EpitopeID', 'SpeciesID']]
@@ -142,7 +142,5 @@ def filter_psea_outputs(in_dir: str, out_path: str, threshold: float=.05):
 
 
 # Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
-
-# Only collapse the viral peptides to epitope do not collapse the bacteria
 
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
