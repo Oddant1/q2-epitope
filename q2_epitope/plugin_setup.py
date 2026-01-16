@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import q2_epitope
-from qiime2.plugin import Plugin, Str, Float, Choices
+from qiime2.plugin import Plugin, Str, Choices
 from q2_types.feature_data import FeatureData
 from q2_types.feature_table import FeatureTable
 from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope, GMT

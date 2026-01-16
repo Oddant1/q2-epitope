@@ -13,4 +13,4 @@ try:
 except ModuleNotFoundError:
     __version__ = '0.0.0+notfound'
 
-from .epitope import epitope_zscore, create_epitope_map, taxa_to_epitope, filter_psea_outputs
+from .epitope import epitope_zscore, create_epitope_map, taxa_to_epitope
