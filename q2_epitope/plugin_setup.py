@@ -92,22 +92,22 @@ plugin.methods.register_function(
                 'epitopes',
 )
 
-plugin.methods.register_function(
-    function=q2_epitope.filter_psea_outputs,
-    inputs={},
-    parameters={
-        'in_dir': Str,
-        'out_path': Str,
-        'threshold': Float,
-    },
-    outputs=[],
-    input_descriptions={},
-    parameter_descriptions={
-        'in_dir': 'in',
-        'out_path': 'out',
-        'threshold': 'threshold',
-    },
-    output_descriptions={},
-    name='name',
-    description='description'
-)
+# plugin.methods.register_function(
+#     function=q2_epitope.filter_psea_outputs,
+#     inputs={},
+#     parameters={
+#         'in_dir': Str,
+#         'out_path': Str,
+#         'threshold': Float,
+#     },
+#     outputs=[],
+#     input_descriptions={},
+#     parameter_descriptions={
+#         'in_dir': 'in',
+#         'out_path': 'out',
+#         'threshold': 'threshold',
+#     },
+#     output_descriptions={},
+#     name='name',
+#     description='description'
+# )
