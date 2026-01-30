@@ -7,10 +7,11 @@
 # ----------------------------------------------------------------------------
 
 import q2_epitope
-from qiime2.plugin import Plugin, Str, Choices
+from qiime2.plugin import Plugin, Str, Choices, Range, Collection, Bool, Float
 from q2_types.feature_data import FeatureData
 from q2_types.feature_table import FeatureTable
-from q2_pepsirf.format_types import Zscore, Epitope, MappedEpitope, GMT
+from q2_pepsirf.format_types import (Zscore, Epitope, MappedEpitope, GMT,
+                                     Enriched, PSEAScores)
 
 
 plugin = Plugin(
@@ -25,7 +26,9 @@ plugin = Plugin(
 plugin.methods.register_function(
     function=q2_epitope.create_epitope_map,
     inputs={'epitope': FeatureData[Epitope]},
-    parameters={},
+    parameters={
+        'collapse': Str % Choices(['Bacterial', 'Viral', 'Both'])
+    },
     outputs=[
         ('epitope_map', FeatureData[MappedEpitope])
     ],
@@ -90,4 +93,30 @@ plugin.methods.register_function(
     name='taxa to epitope',
     description='Creates a GMT file mapping SpeciesIDs to their associated '
                 'epitopes',
+)
+
+plugin.methods.register_function(
+    function=q2_epitope.enriched_subtypes,
+    inputs={
+        'scores': Collection[FeatureData[PSEAScores]],
+        'subtypes': FeatureData[MappedEpitope],
+    },
+    parameters={
+        'p_value': Float % Range(0, None),
+        'enrichment_score': Float % Range(0, None),
+        'include_negative_enrichment': Bool
+    },
+    outputs=[
+        ('enriched', FeatureData[Enriched]),
+    ],
+    input_descriptions={
+        'scores': 'PSEAScores of peptides/epitopes.',
+        'subtypes': 'subtypes'
+    },
+    parameter_descriptions={},
+    output_descriptions={
+        'enriched': 'Enriched subtypes.'
+    },
+    name='enriched subtypes',
+    description='Counts which subtypes have been enriched',
 )

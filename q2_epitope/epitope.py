@@ -14,8 +14,8 @@ from biom import Table
 from q2_types.feature_table import BIOMV210Format
 
 
-def create_epitope_map(epitope: pd.DataFrame) -> pd.DataFrame:
-    epitope = _create_EpitopeID_row(epitope)
+def create_epitope_map(epitope: pd.DataFrame, collapse:str='Viral') -> pd.DataFrame:
+    epitope = _create_EpitopeID_row(epitope, collapse)
     epitope = epitope.reset_index()
     epitope = _create_SpeciesSubtype_row(epitope)
 
@@ -123,3 +123,32 @@ def _create_SpeciesSubtype_row(epitope):
 # Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
 
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
+def enriched_subtypes(scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05, enrichment_score: float = 1,
+                      include_negative_enrichment: bool = True) -> pd.DataFrame:
+    scores = pd.concat(list(scores.values()))
+    scores = scores.loc[scores['p.adjust'] <= p_value]
+
+    if include_negative_enrichment:
+        scores = scores.loc[abs(scores['enrichmentScore'] >= enrichment_score)]
+    else:
+        scores = scores.loc[scores['enrichmentScore'] >= enrichment_score]
+
+    subtype_counts = {}
+    for _, row in scores.iterrows():
+        epitopes = row['core_enrichment'].split('/')
+
+        for epitope in epitopes:
+            possible_subtypes = \
+                subtypes.loc[subtypes['CodeName'].str.contains(epitope)] \
+                    ['SpeciesSubtype'].values[0].split(";")
+
+            for possible_subtype in possible_subtypes:
+                if possible_subtype not in subtype_counts:
+                    subtype_counts[possible_subtype] = 0
+
+                subtype_counts[possible_subtype] += 1
+
+    # TODO: Sort this by values
+    subtype_counts = pd.DataFrame({'Counts': subtype_counts.values()},
+                                  index=subtype_counts.keys())
+    return subtype_counts
