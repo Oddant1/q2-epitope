@@ -19,18 +19,16 @@ def create_epitope_map(epitope: pd.DataFrame, collapse:str='Viral') -> pd.DataFr
     epitope = epitope.reset_index()
     epitope = _create_SpeciesSubtype_row(epitope)
 
-    epitope_map = epitope[['EpitopeID', 'CodeName', 'SpeciesSubtype']]
-    epitope_map = \
-        epitope_map.groupby(
-            'EpitopeID')[
-                ['CodeName', 'SpeciesSubtype']].agg(list).reset_index()
-    epitope_map['CodeName'] = \
-        epitope_map['CodeName'].transform(lambda x: ';'.join(x))
-    epitope_map['SpeciesSubtype'] = \
-        epitope_map['SpeciesSubtype'].transform(lambda x: ';'.join(x))
-    epitope_map.set_index('EpitopeID', inplace=True)
+    epitope = \
+        epitope.groupby(
+            'EpitopeID').agg(list).reset_index()
+    epitope['CodeName'] = \
+        epitope['CodeName'].transform(lambda x: ';'.join(x))
+    epitope['SpeciesSubtype'] = \
+        epitope['SpeciesSubtype'].transform(lambda x: ';'.join(x))
+    epitope.set_index('EpitopeID', inplace=True)
 
-    return epitope_map
+    return epitope
 
 
 def epitope_zscore(
@@ -123,8 +121,11 @@ def _create_SpeciesSubtype_row(epitope):
 # Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
 
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
-def enriched_subtypes(scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05, enrichment_score: float = 1,
-                      include_negative_enrichment: bool = True) -> pd.DataFrame:
+def enriched_subtypes(
+        scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
+        enrichment_score: float = 1, include_negative_enrichment: bool = True
+    ) -> pd.DataFrame:
+
     scores = pd.concat(list(scores.values()))
     scores = scores.loc[scores['p.adjust'] <= p_value]
 
