@@ -136,6 +136,9 @@ def enriched_subtypes(
     subtypes['Subtype'] = subtypes['Subtype'].apply(ast.literal_eval)
     subtypes['CodeName'] = subtypes['CodeName'].apply(ast.literal_eval)
 
+    # TODO: Will be some hairiness if they choose a weird split column... Not
+    # sure how much we care about explicitly supporting anything but Category
+    # right now though
     if split_column is not None:
         if split_column not in subtypes:
             raise KeyError(
@@ -161,6 +164,7 @@ def enriched_subtypes(
         scores = scores.loc[scores['enrichmentScore'] >= enrichment_score]
 
     counts = {key: {} for key in keys}
+    # TODO: Clean this whole mess up
     for _, row in scores.iterrows():
         peptides = row['core_enrichment'].split('/')
         species = row['species_name']
