@@ -206,6 +206,7 @@ def enriched_subtypes(
 
     # TODO: Sort this by values
     for key, value in counts.items():
-        counts[key] = pd.DataFrame({'Counts': value.values()}, index=value.keys())
+        _sorted = dict(sorted(value.items(), key=lambda item: item[1], reverse=True))
+        counts[key] = pd.DataFrame({'Counts': _sorted.values()}, index=_sorted.keys())
 
     return counts
