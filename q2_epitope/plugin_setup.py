@@ -104,10 +104,11 @@ plugin.methods.register_function(
     parameters={
         'p_value': Float % Range(0, None),
         'enrichment_score': Float % Range(0, None),
-        'include_negative_enrichment': Bool
+        'include_negative_enrichment': Bool,
+        'split_column': Str
     },
     outputs=[
-        ('enriched', FeatureData[Enriched]),
+        ('enriched', Collection[FeatureData[Enriched]]),
     ],
     input_descriptions={
         'scores': 'PSEAScores of peptides/epitopes.',

@@ -23,10 +23,30 @@ def create_epitope_map(epitope: pd.DataFrame, collapse:str='Viral') -> pd.DataFr
         epitope.groupby(
             'EpitopeID').agg(list).reset_index()
     epitope['CodeName'] = \
-        epitope['CodeName'].transform(lambda x: ';'.join(x))
+        epitope['CodeName'].transform(list)
     epitope['SpeciesSubtype'] = \
-        epitope['SpeciesSubtype'].transform(lambda x: ';'.join(x))
+        epitope['SpeciesSubtype'].transform(list)
     epitope.set_index('EpitopeID', inplace=True)
+
+    # def validate_categories(row):
+    #     '''
+    #     Ensure the categories column is actually valid. After aggregating some
+    #     rows will have a list of multiple categories, these should just be the
+    #     same category multiple times.
+
+    #     1. Ensure that is the case
+    #     2. Make it just a single value not a list
+    #     '''
+    #     category_set = set(row['Category'])
+    #     if len(category_set) > 1:
+    #         raise ValueError(
+    #             'Collapsed epitope mapped some subtypes to one category and '
+    #             f'some to another. Offending row is: {row}'
+    #         )
+
+    #     return row['Category'][0]
+
+    # epitope['Category'] = epitope.apply(validate_categories, axis=1)
 
     return epitope
 
@@ -77,6 +97,11 @@ def taxa_to_epitope(
 
 
 def _create_EpitopeID_row(epitope, collapse):
+    # TODO: Make this better later
+    epitope['Species'] = epitope['Species'].str.split(';')
+    epitope['Subtype'] = epitope['Subtype'].str.split(';')
+
+
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
     epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
     epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
@@ -103,13 +128,13 @@ def _create_SpeciesSubtype_row(epitope):
     epitope['Subtype'] = epitope['Subtype'].fillna('subtypeNA')
 
     def combine(row):
-        combined_row = ''
+        combined_row = []
         species = row['Species'].split(';')
         subtype = row['Subtype'].split(';')
         zipped = zip(species, subtype)
 
         for species, subtype in zipped:
-            combined_row += f'{species}:{subtype};'
+            combined_row.append(f'{species}:{subtype}')
 
         return combined_row[:-1]
 
@@ -123,8 +148,31 @@ def _create_SpeciesSubtype_row(epitope):
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
 def enriched_subtypes(
         scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
-        enrichment_score: float = 1, include_negative_enrichment: bool = True
-    ) -> pd.DataFrame:
+        enrichment_score: float = 1, include_negative_enrichment: bool = True,
+        split_column: str = None) -> pd.DataFrame:
+
+    split_values = []
+    keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
+
+    if split_column is not None:
+        if split_column not in subtypes:
+            raise KeyError(
+                f"The requested split_column: '{split_column}' does not "
+                f"exist. Valid columns are: {list(subtypes.columns)}"
+            )
+
+        split_values = subtypes[split_column].unique()
+
+        new_keys = []
+        for value in split_values:
+            for key in keys:
+                new_keys.append(f'{value}-{key}')
+
+        keys = new_keys
+
+    # species-level peptide-level, species-level epitope-level, subspecies-level peptide-level
+    # raise ValueError(subtypes[split_column])
+    # Get categories
 
     scores = pd.concat(list(scores.values()))
     scores = scores.loc[scores['p.adjust'] <= p_value]
@@ -134,22 +182,60 @@ def enriched_subtypes(
     else:
         scores = scores.loc[scores['enrichmentScore'] >= enrichment_score]
 
-    subtype_counts = {}
+    counts = {key: {} for key in keys}
     for _, row in scores.iterrows():
-        epitopes = row['core_enrichment'].split('/')
+        peptides = row['core_enrichment'].split('/')
+        species = row['species_name']
 
-        for epitope in epitopes:
-            possible_subtypes = \
-                subtypes.loc[subtypes['CodeName'].str.contains(epitope)] \
-                    ['SpeciesSubtype'].values[0].split(";")
+        for peptide in peptides:
+            possibles = \
+                subtypes.loc[
+                    subtypes['CodeName'].apply(
+                        lambda peptides: peptide in peptides)]
+            for _, possible in possibles.iterrows():
+                index = possible['CodeName'].index(peptide)
+                species_subtype = possible['SpeciesSubtype'][index]
+                epitope = possible.name
+                if split_column is not None:
+                    found_split_value = possible[split_column]
+                    if isinstance(found_split_value, list):
+                        found_split_value = found_split_value[index]
 
-            for possible_subtype in possible_subtypes:
-                if possible_subtype not in subtype_counts:
-                    subtype_counts[possible_subtype] = 0
+                    if not f'{found_split_value}-{species}-{peptide}' in counts[f'{found_split_value}-species-peptide']:
+                        counts[f'{found_split_value}-species-peptide'][f'{found_split_value}-{species}-{peptide}'] = 0
+                    counts[f'{found_split_value}-species-peptide'][f'{found_split_value}-{species}-{peptide}'] += 1
 
-                subtype_counts[possible_subtype] += 1
+                    if not f'{found_split_value}-{species}-{epitope}' in counts[f'{found_split_value}-species-epitope']:
+                        counts[f'{found_split_value}-species-epitope'][f'{found_split_value}-{species}-{epitope}'] = 0
+                    counts[f'{found_split_value}-species-epitope'][f'{found_split_value}-{species}-{epitope}'] +=1
+
+                    if not f'{found_split_value}-{species_subtype}-{peptide}' in counts[f'{found_split_value}-subspecies-peptide']:
+                        counts[f'{found_split_value}-subspecies-peptide'][f'{found_split_value}-{species_subtype}-{peptide}'] = 0
+                    counts[f'{found_split_value}-subspecies-peptide'][f'{found_split_value}-{species_subtype}-{peptide}'] += 1
+                else:
+                    if not f'{species}-{peptide}' in counts['species-peptide']:
+                        counts['species-peptide'][f'{species}-{peptide}'] = 0
+                    counts['species-peptide'][f'{species}-{peptide}'] += 1
+
+                    if not f'{species}-{epitope}' in counts['species-epitope']:
+                        counts['species-epitope'][f'{species}-{epitope}'] = 0
+                    counts['species-epitope'][f'{species}-{epitope}'] +=1
+
+                    if not f'{species_subtype}-{peptide}' in counts['subspecies-peptide']:
+                        counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] = 0
+                    counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] += 1
+
+
+            # for possible_subtype in possible_subtypes:
+            #     if possible_subtype not in counts:
+            #         counts[possible_subtype] = 0
+
+            #     counts[possible_subtype] += 1
 
     # TODO: Sort this by values
-    subtype_counts = pd.DataFrame({'Counts': subtype_counts.values()},
-                                  index=subtype_counts.keys())
-    return subtype_counts
+    # counts = pd.DataFrame({'Counts': counts.values()},
+    #                               index=counts.keys())
+    for key, value in counts.items():
+        counts[key] = pd.DataFrame({'Counts': value.values()}, index=value.keys())
+
+    return counts
