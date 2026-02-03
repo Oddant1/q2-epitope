@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import os
+import ast
 import numpy as np
 import pandas as pd
 from biom import Table
@@ -17,36 +17,31 @@ from q2_types.feature_table import BIOMV210Format
 def create_epitope_map(epitope: pd.DataFrame, collapse:str='Viral') -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope, collapse)
     epitope = epitope.reset_index()
-    epitope = _create_SpeciesSubtype_row(epitope)
 
     epitope = \
         epitope.groupby(
             'EpitopeID').agg(list).reset_index()
-    epitope['CodeName'] = \
-        epitope['CodeName'].transform(list)
-    epitope['SpeciesSubtype'] = \
-        epitope['SpeciesSubtype'].transform(list)
     epitope.set_index('EpitopeID', inplace=True)
 
-    # def validate_categories(row):
-    #     '''
-    #     Ensure the categories column is actually valid. After aggregating some
-    #     rows will have a list of multiple categories, these should just be the
-    #     same category multiple times.
+    def validate_categories(row):
+        '''
+        Ensure the categories column is actually valid. After aggregating some
+        rows will have a list of multiple categories, these should just be the
+        same category multiple times.
 
-    #     1. Ensure that is the case
-    #     2. Make it just a single value not a list
-    #     '''
-    #     category_set = set(row['Category'])
-    #     if len(category_set) > 1:
-    #         raise ValueError(
-    #             'Collapsed epitope mapped some subtypes to one category and '
-    #             f'some to another. Offending row is: {row}'
-    #         )
+        1. Ensure that is the case
+        2. Make it just a single value not a list
+        '''
+        category_set = set(row['Category'])
+        if len(category_set) > 1:
+            raise ValueError(
+                'Collapsed epitope mapped some subtypes to one category and '
+                f'some to another. Offending row is: {row}'
+            )
 
-    #     return row['Category'][0]
+        return row['Category'][0]
 
-    # epitope['Category'] = epitope.apply(validate_categories, axis=1)
+    epitope['Category'] = epitope.apply(validate_categories, axis=1)
 
     return epitope
 
@@ -97,18 +92,23 @@ def taxa_to_epitope(
 
 
 def _create_EpitopeID_row(epitope, collapse):
-    # TODO: Make this better later
     epitope['Species'] = epitope['Species'].str.split(';')
     epitope['Subtype'] = epitope['Subtype'].str.split(';')
-
-
     epitope['SpeciesID'] = epitope['SpeciesID'].str.split(';')
-    epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
     epitope['ClusterID'] = epitope['ClusterID'].str.split(';')
-    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].fillna('Peptide_NA')
     epitope['EpitopeWindow'] = epitope['EpitopeWindow'].str.split(';')
 
-    epitope = epitope.explode(['SpeciesID', 'ClusterID', 'EpitopeWindow'])
+    epitope = epitope.explode(
+        ['Species', 'Subtype', 'SpeciesID', 'ClusterID', 'EpitopeWindow']
+    )
+
+    epitope['Subtype'] = epitope['Subtype'].fillna('subtypeNA')
+    # Happens because some subtype rows have an empty value along with valid
+    # values indicating one or more missing
+    epitope['Subtype'] = epitope['Subtype'].replace('', 'subtypeNA')
+    epitope['ClusterID'] = epitope['ClusterID'].fillna('clusterNA')
+    epitope['EpitopeWindow'] = epitope['EpitopeWindow'].fillna('Peptide_NA')
+
     epitope.drop_duplicates(inplace=True)
 
     def combine(row):
@@ -123,26 +123,6 @@ def _create_EpitopeID_row(epitope, collapse):
     return epitope
 
 
-def _create_SpeciesSubtype_row(epitope):
-    epitope['Species'] = epitope['Species'].fillna('speciesNA')
-    epitope['Subtype'] = epitope['Subtype'].fillna('subtypeNA')
-
-    def combine(row):
-        combined_row = []
-        species = row['Species'].split(';')
-        subtype = row['Subtype'].split(';')
-        zipped = zip(species, subtype)
-
-        for species, subtype in zipped:
-            combined_row.append(f'{species}:{subtype}')
-
-        return combined_row[:-1]
-
-    epitope['SpeciesSubtype'] = epitope.apply(combine, axis=1)
-
-    return epitope
-
-
 # Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
 
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
@@ -153,6 +133,8 @@ def enriched_subtypes(
 
     split_values = []
     keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
+    subtypes['Subtype'] = subtypes['Subtype'].apply(ast.literal_eval)
+    subtypes['CodeName'] = subtypes['CodeName'].apply(ast.literal_eval)
 
     if split_column is not None:
         if split_column not in subtypes:
@@ -169,10 +151,6 @@ def enriched_subtypes(
                 new_keys.append(f'{value}-{key}')
 
         keys = new_keys
-
-    # species-level peptide-level, species-level epitope-level, subspecies-level peptide-level
-    # raise ValueError(subtypes[split_column])
-    # Get categories
 
     scores = pd.concat(list(scores.values()))
     scores = scores.loc[scores['p.adjust'] <= p_value]
@@ -194,7 +172,8 @@ def enriched_subtypes(
                         lambda peptides: peptide in peptides)]
             for _, possible in possibles.iterrows():
                 index = possible['CodeName'].index(peptide)
-                species_subtype = possible['SpeciesSubtype'][index]
+                subtype = possible['Subtype'][index]
+                species_subtype = f'{species}:{subtype}'
                 epitope = possible.name
                 if split_column is not None:
                     found_split_value = possible[split_column]
@@ -225,16 +204,7 @@ def enriched_subtypes(
                         counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] = 0
                     counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] += 1
 
-
-            # for possible_subtype in possible_subtypes:
-            #     if possible_subtype not in counts:
-            #         counts[possible_subtype] = 0
-
-            #     counts[possible_subtype] += 1
-
     # TODO: Sort this by values
-    # counts = pd.DataFrame({'Counts': counts.values()},
-    #                               index=counts.keys())
     for key, value in counts.items():
         counts[key] = pd.DataFrame({'Counts': value.values()}, index=value.keys())
 
