@@ -105,7 +105,8 @@ plugin.methods.register_function(
         'p_value': Float % Range(0, None),
         'enrichment_score': Float % Range(0, None),
         'include_negative_enrichment': Bool,
-        'split_column': Str
+        'split_column': Str,
+        'peptide_library': Str
     },
     outputs=[
         ('enriched', Collection[FeatureData[Enriched]]),

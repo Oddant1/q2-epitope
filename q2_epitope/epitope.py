@@ -127,7 +127,8 @@ def _create_EpitopeID_row(epitope, collapse):
 def enriched_subtypes(
         scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
         enrichment_score: float = 1, include_negative_enrichment: bool = True,
-        split_column: str = None) -> pd.DataFrame:
+        split_column: str = None,
+        peptide_library: str = 'IN2') -> pd.DataFrame:
 
     split_values = []
     keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
@@ -160,45 +161,37 @@ def enriched_subtypes(
         scores = scores.loc[scores['enrichmentScore'] >= enrichment_score]
 
     counts = {key: {} for key in keys}
-    # TODO: Clean this whole mess up
     for _, row in scores.iterrows():
-        peptides = row['core_enrichment'].split('/')
+        enriched_elements = row['core_enrichment'].split('/')
         species = row['species_name']
 
-        for peptide in peptides:
-            hits = \
-                subtypes.loc[
-                    subtypes['CodeName'].apply(
-                        lambda peptides: peptide in peptides)]
+        for enriched in enriched_elements:
+            if enriched.startswith(peptide_library):
+                peptide = enriched
+                hits = \
+                    subtypes.loc[
+                        subtypes['CodeName'].apply(
+                            lambda peptides: peptide in peptides)]
 
-            if hits.empty:
-                epitope = peptide
-                hit = subtypes.loc[peptide]
-                for index, (peptide, subtype) in enumerate(zip(hit['CodeName'], hit['Subtype'])):
-                    species_subtype = f'{species}:{subtype}'
-
-                    found_split_value = ''
-                    if split_column is not None:
-                        found_split_value = hit[split_column]
-                        if isinstance(found_split_value, list):
-                            found_split_value = found_split_value[index]
-                        found_split_value += '-'
-
-                    _count_enriched(counts, species, species_subtype, epitope,
-                                    peptide, found_split_value)
-            else:
                 for _, hit in hits.iterrows():
                     index = hit['CodeName'].index(peptide)
                     subtype = hit['Subtype'][index]
                     species_subtype = f'{species}:{subtype}'
                     epitope = hit.name
 
-                    found_split_value = ''
-                    if split_column is not None:
-                        found_split_value = hit[split_column]
-                        if isinstance(found_split_value, list):
-                            found_split_value = found_split_value[index]
-                        found_split_value += '-'
+                    found_split_value = \
+                        _find_split_value(hit, split_column, index)
+
+                    _count_enriched(counts, species, species_subtype, epitope,
+                                    peptide, found_split_value)
+            else:
+                epitope = enriched
+                hit = subtypes.loc[epitope]
+                for index, (peptide, subtype) in enumerate(zip(hit['CodeName'], hit['Subtype'])):
+                    species_subtype = f'{species}:{subtype}'
+
+                    found_split_value = \
+                        _find_split_value(hit, split_column, index)
 
                     _count_enriched(counts, species, species_subtype, epitope,
                                     peptide, found_split_value)
@@ -211,7 +204,21 @@ def enriched_subtypes(
 
     return counts
 
-def _count_enriched(counts, species, species_subtype, epitope, peptide, found_split_value):
+
+def _find_split_value(hit, split_column, index):
+    found_split_value = ''
+    if split_column is not None:
+        found_split_value = hit[split_column]
+        if isinstance(found_split_value, list):
+            found_split_value = found_split_value[index]
+        found_split_value += '-'
+
+    return found_split_value
+
+
+def _count_enriched(counts, species, species_subtype, epitope, peptide,
+                    found_split_value):
+    print(found_split_value)
     # Track species and peptide including split value if relevant
     split_species_peptide = f'{found_split_value}species-peptide'
     found_split_species_peptide = \
