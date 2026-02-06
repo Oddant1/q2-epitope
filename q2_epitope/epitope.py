@@ -6,7 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import ast
 import numpy as np
 import pandas as pd
 from biom import Table
@@ -57,11 +56,10 @@ def epitope_zscore(
     data = []
     for _, row in epitope_map.iterrows():
         max_z_scores_per_sample = []
-        split_row = row['CodeName'].split(';')
 
         # Filter the scores dataframe to only include columns corresponding to
         # the peptides we're looking at
-        z_scores = zscores.columns[zscores.columns.isin(split_row)]
+        z_scores = zscores.columns[zscores.columns.isin(row['CodeName'])]
 
         for _, row in zscores[z_scores.values].iterrows():
             max_z_scores_per_sample.append(max(row.values, key=abs))
@@ -133,8 +131,6 @@ def enriched_subtypes(
 
     split_values = []
     keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
-    subtypes['Subtype'] = subtypes['Subtype'].apply(ast.literal_eval)
-    subtypes['CodeName'] = subtypes['CodeName'].apply(ast.literal_eval)
 
     # TODO: Will be some hairiness if they choose a weird split column... Not
     # sure how much we care about explicitly supporting anything but Category
@@ -170,47 +166,60 @@ def enriched_subtypes(
         species = row['species_name']
 
         for peptide in peptides:
-            possibles = \
+            hits = \
                 subtypes.loc[
                     subtypes['CodeName'].apply(
                         lambda peptides: peptide in peptides)]
-            for _, possible in possibles.iterrows():
-                index = possible['CodeName'].index(peptide)
-                subtype = possible['Subtype'][index]
+            for _, hit in hits.iterrows():
+                index = hit['CodeName'].index(peptide)
+                subtype = hit['Subtype'][index]
                 species_subtype = f'{species}:{subtype}'
-                epitope = possible.name
+                epitope = hit.name
+
+                found_split_value = ''
                 if split_column is not None:
-                    found_split_value = possible[split_column]
+                    found_split_value = hit[split_column]
                     if isinstance(found_split_value, list):
                         found_split_value = found_split_value[index]
+                    found_split_value += '-'
 
-                    if not f'{found_split_value}-{species}-{peptide}' in counts[f'{found_split_value}-species-peptide']:
-                        counts[f'{found_split_value}-species-peptide'][f'{found_split_value}-{species}-{peptide}'] = 0
-                    counts[f'{found_split_value}-species-peptide'][f'{found_split_value}-{species}-{peptide}'] += 1
+                # Track species and peptide including split value if relevant
+                split_species_peptide = f'{found_split_value}species-peptide'
+                found_split_species_peptide = \
+                    f'{found_split_value}{species}-{peptide}'
 
-                    if not f'{found_split_value}-{species}-{epitope}' in counts[f'{found_split_value}-species-epitope']:
-                        counts[f'{found_split_value}-species-epitope'][f'{found_split_value}-{species}-{epitope}'] = 0
-                    counts[f'{found_split_value}-species-epitope'][f'{found_split_value}-{species}-{epitope}'] +=1
+                if not found_split_species_peptide in \
+                        counts[split_species_peptide]:
+                    counts[split_species_peptide]\
+                        [found_split_species_peptide] = 0
+                counts[split_species_peptide][found_split_species_peptide] += 1
 
-                    if not f'{found_split_value}-{species_subtype}-{peptide}' in counts[f'{found_split_value}-subspecies-peptide']:
-                        counts[f'{found_split_value}-subspecies-peptide'][f'{found_split_value}-{species_subtype}-{peptide}'] = 0
-                    counts[f'{found_split_value}-subspecies-peptide'][f'{found_split_value}-{species_subtype}-{peptide}'] += 1
-                else:
-                    if not f'{species}-{peptide}' in counts['species-peptide']:
-                        counts['species-peptide'][f'{species}-{peptide}'] = 0
-                    counts['species-peptide'][f'{species}-{peptide}'] += 1
+                # Track species and epitope including split value if relevant
+                split_species_epitope = f'{found_split_value}species-epitope'
+                found_split_species_epitope = \
+                    f'{found_split_value}{species}-{epitope}'
 
-                    if not f'{species}-{epitope}' in counts['species-epitope']:
-                        counts['species-epitope'][f'{species}-{epitope}'] = 0
-                    counts['species-epitope'][f'{species}-{epitope}'] +=1
+                if not found_split_species_epitope in \
+                        counts[split_species_epitope]:
+                    counts[split_species_epitope]\
+                        [found_split_species_epitope] = 0
+                counts[split_species_epitope][found_split_species_epitope] +=1
 
-                    if not f'{species_subtype}-{peptide}' in counts['subspecies-peptide']:
-                        counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] = 0
-                    counts['subspecies-peptide'][f'{species_subtype}-{peptide}'] += 1
+                # Track subspecies and peptide including split value if
+                # relevant
+                split_sub_peptide = f'{found_split_value}subspecies-peptide'
+                found_split_sub_peptide = \
+                    f'{found_split_value}{species_subtype}-{peptide}'
 
-    # TODO: Sort this by values
+                if not found_split_species_peptide in \
+                        counts[split_sub_peptide]:
+                    counts[split_sub_peptide][found_split_sub_peptide] = 0
+                counts[split_sub_peptide][found_split_sub_peptide] += 1
+
     for key, value in counts.items():
-        _sorted = dict(sorted(value.items(), key=lambda item: item[1], reverse=True))
-        counts[key] = pd.DataFrame({'Counts': _sorted.values()}, index=_sorted.keys())
+        _sorted = \
+            dict(sorted(value.items(), key=lambda item: item[1], reverse=True))
+        counts[key] = \
+            pd.DataFrame({'Counts': _sorted.values()}, index=_sorted.keys())
 
     return counts
