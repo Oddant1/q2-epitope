@@ -121,8 +121,6 @@ def _create_EpitopeID_row(epitope, collapse):
     return epitope
 
 
-# Take those peptides and only collapse those to epitope and get subtypes (should be same workflow but on already filtered data)
-
 # NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
 def enriched_subtypes(
         scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
@@ -218,7 +216,6 @@ def _find_split_value(hit, split_column, index):
 
 def _count_enriched(counts, species, species_subtype, epitope, peptide,
                     found_split_value):
-    print(found_split_value)
     # Track species and peptide including split value if relevant
     split_species_peptide = f'{found_split_value}species-peptide'
     found_split_species_peptide = \
