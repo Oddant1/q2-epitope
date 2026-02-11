@@ -13,7 +13,9 @@ from biom import Table
 from q2_types.feature_table import BIOMV210Format
 
 
-def create_epitope_map(epitope: pd.DataFrame, collapse:str='Viral') -> pd.DataFrame:
+def create_epitope_map(
+            epitope: pd.DataFrame, collapse:str='Viral'
+        ) -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope, collapse)
     epitope = epitope.reset_index()
 
@@ -77,7 +79,8 @@ def epitope_zscore(
 
 
 def taxa_to_epitope(
-        epitope: pd.DataFrame, collapse: str='Viral') -> pd.DataFrame:
+            epitope: pd.DataFrame, collapse: str='Viral'
+        ) -> pd.DataFrame:
     epitope = _create_EpitopeID_row(epitope, collapse)
 
     mapped = epitope[['EpitopeID', 'SpeciesID']]
@@ -121,19 +124,23 @@ def _create_EpitopeID_row(epitope, collapse):
     return epitope
 
 
-# NOTE: At the end we are going to run tens out thousands of samples so we will want to make things efficient
 def enriched_subtypes(
-        scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
-        enrichment_score: float = 1, include_negative_enrichment: bool = True,
-        split_column: str = None,
-        peptide_library: str = 'IN2') -> pd.DataFrame:
-
+            scores: pd.DataFrame, subtypes: pd.DataFrame, p_value: float = .05,
+            enrichment_score: float = 1,
+            include_negative_enrichment: bool = True,
+            split_column: str = None,
+            peptide_library: str = 'IN2'
+        ) -> pd.DataFrame:
     split_values = []
     keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
 
-    # TODO: Will be some hairiness if they choose a weird split column... Not
-    # sure how much we care about explicitly supporting anything but Category
-    # right now though
+    # NOTE: This will definitely work if Category is chosen as split column
+    # which was the intended usage. If a column that is formatted wildly
+    # different from that is chosen, things may get hairy.
+    #
+    # Here we assume that a split column will have cells that are either a
+    # single value or a list of values of the same length as the list of
+    # peptides for its row
     if split_column is not None:
         if split_column not in subtypes:
             raise KeyError(
@@ -160,11 +167,15 @@ def enriched_subtypes(
 
     counts = {key: {} for key in keys}
     for _, row in scores.iterrows():
+        # Get core_enrichement from psea_out
         enriched_elements = row['core_enrichment'].split('/')
         species = row['species_name']
 
         for enriched in enriched_elements:
+            # Determine if we are looking at something that has been collapsed
+            # to epitope or not
             if enriched.startswith(peptide_library):
+                # uncollapsed
                 peptide = enriched
                 hits = \
                     subtypes.loc[
@@ -175,22 +186,25 @@ def enriched_subtypes(
                     index = hit['CodeName'].index(peptide)
                     subtype = hit['Subtype'][index]
                     species_subtype = f'{species}:{subtype}'
+                    # NOTE: If this is uncollapsed the epitope will just be the
+                    # peptide (if this is a bacterium and bacteria was not
+                    # collapsed for instance)
                     epitope = hit.name
 
                     found_split_value = \
                         _find_split_value(hit, split_column, index)
-
                     _count_enriched(counts, species, species_subtype, epitope,
                                     peptide, found_split_value)
             else:
+                # collapsed
                 epitope = enriched
                 hit = subtypes.loc[epitope]
-                for index, (peptide, subtype) in enumerate(zip(hit['CodeName'], hit['Subtype'])):
+                for index, (peptide, subtype) in enumerate(
+                        zip(hit['CodeName'], hit['Subtype'])):
                     species_subtype = f'{species}:{subtype}'
 
                     found_split_value = \
                         _find_split_value(hit, split_column, index)
-
                     _count_enriched(counts, species, species_subtype, epitope,
                                     peptide, found_split_value)
 
