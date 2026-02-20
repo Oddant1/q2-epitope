@@ -194,7 +194,7 @@ def enriched_subtypes(
                     found_split_value = \
                         _find_split_value(hit, split_column, index)
                     _count_enriched(counts, species, species_subtype, epitope,
-                                    peptide, found_split_value)
+                                    found_split_value)
             else:
                 # collapsed
                 epitope = enriched
@@ -206,7 +206,7 @@ def enriched_subtypes(
                     found_split_value = \
                         _find_split_value(hit, split_column, index)
                     _count_enriched(counts, species, species_subtype, epitope,
-                                    peptide, found_split_value)
+                                    found_split_value)
 
     for key, value in counts.items():
         _sorted = \
@@ -228,34 +228,29 @@ def _find_split_value(hit, split_column, index):
     return found_split_value
 
 
-def _count_enriched(counts, species, species_subtype, epitope, peptide,
+def _count_enriched(counts, species, species_subtype, epitope,
                     found_split_value):
-    # Track species and peptide including split value if relevant
-    split_species_peptide = f'{found_split_value}species-peptide'
-    found_split_species_peptide = f'{found_split_value}{species}'
+    # Track species and split value if relevant
+    split_species = f'{found_split_value}species'
+    found_split_species = f'{found_split_value}{species}'
 
-    if not found_split_species_peptide in \
-            counts[split_species_peptide]:
-        counts[split_species_peptide]\
-            [found_split_species_peptide] = 0
-    counts[split_species_peptide][found_split_species_peptide] += 1
+    if not found_split_species in counts[split_species]:
+        counts[split_species][found_split_species] = 0
+    counts[split_species][found_split_species] += 1
+
+    # Track subspecies and split value if relevant
+    split_subtype = f'{found_split_value}subspecies'
+    found_split_subtype = f'{found_split_value}{species_subtype}'
+
+    if not found_split_subtype in \
+            counts[split_subtype]:
+        counts[split_subtype][found_split_subtype] = 0
+    counts[split_subtype][found_split_subtype] += 1
 
     # Track species and epitope including split value if relevant
     split_species_epitope = f'{found_split_value}species-epitope'
     found_split_species_epitope = f'{found_split_value}{species}-{epitope}'
 
-    if not found_split_species_epitope in \
-            counts[split_species_epitope]:
-        counts[split_species_epitope]\
-            [found_split_species_epitope] = 0
+    if not found_split_species_epitope in counts[split_species_epitope]:
+        counts[split_species_epitope][found_split_species_epitope] = 0
     counts[split_species_epitope][found_split_species_epitope] +=1
-
-    # Track subspecies and peptide including split value if
-    # relevant
-    split_sub_peptide = f'{found_split_value}subspecies-peptide'
-    found_split_sub_peptide = f'{found_split_value}{species_subtype}'
-
-    if not found_split_sub_peptide in \
-            counts[split_sub_peptide]:
-        counts[split_sub_peptide][found_split_sub_peptide] = 0
-    counts[split_sub_peptide][found_split_sub_peptide] += 1
