@@ -164,9 +164,8 @@ def enriched_subtypes(
                 hits = subtypes.loc[subtypes['CodeName'].apply(
                             lambda peptides: peptide in peptides
                         )]
-                print(hits)
+
                 def _count_uncollapsed(hit):
-                    print(hit)
                     index = hit.name.index(peptide)
                     subtype = hit['Subtype'][index]
                     species_subtype = f'{species}:{subtype}'
