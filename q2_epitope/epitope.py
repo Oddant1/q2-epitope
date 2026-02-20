@@ -132,7 +132,7 @@ def enriched_subtypes(
             peptide_library: str = 'IN2'
         ) -> pd.DataFrame:
     split_values = []
-    keys = ['species-peptide', 'species-epitope', 'subspecies-peptide']
+    keys = ['species', 'subspecies', 'species-epitope', ]
 
     # NOTE: This will definitely work if Category is chosen as split column
     # which was the intended usage. If a column that is formatted wildly
