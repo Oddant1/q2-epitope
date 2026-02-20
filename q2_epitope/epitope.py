@@ -131,8 +131,7 @@ def enriched_subtypes(
             split_column: str = None,
             peptide_library: str = 'IN2'
         ) -> pd.DataFrame:
-    split_values = []
-    keys = ['species', 'subspecies', 'species-epitope', ]
+    default_keys = ['species', 'subspecies', 'species-epitope', ]
 
     # NOTE: This will definitely work if Category is chosen as split column
     # which was the intended usage. If a column that is formatted wildly
@@ -142,31 +141,16 @@ def enriched_subtypes(
     # single value or a list of values of the same length as the list of
     # peptides for its row
     if split_column is not None:
-        if split_column not in subtypes:
-            raise KeyError(
-                f"The requested split_column: '{split_column}' does not "
-                f"exist. Valid columns are: {list(subtypes.columns)}"
-            )
-
-        split_values = subtypes[split_column].unique()
-
-        new_keys = []
-        for value in split_values:
-            for key in keys:
-                new_keys.append(f'{value}-{key}')
-
-        keys = new_keys
-
-    scores = pd.concat(list(scores.values()))
-    scores = scores.loc[scores['p.adjust'] <= p_value]
-
-    if include_negative_enrichment:
-        scores = scores.loc[abs(scores['enrichmentScore'] >= enrichment_score)]
+        keys = _get_keys(subtypes, split_column, default_keys)
     else:
-        scores = scores.loc[scores['enrichmentScore'] >= enrichment_score]
+        keys = default_keys
+
+    filtered_scores = _filter_scores(
+        scores, p_value, enrichment_score,include_negative_enrichment
+    )
 
     counts = {key: {} for key in keys}
-    for _, row in scores.iterrows():
+    def _count(row):
         # Get core_enrichement from psea_out
         enriched_elements = row['core_enrichment'].split('/')
         species = row['species_name']
@@ -177,13 +161,13 @@ def enriched_subtypes(
             if enriched.startswith(peptide_library):
                 # uncollapsed
                 peptide = enriched
-                hits = \
-                    subtypes.loc[
-                        subtypes['CodeName'].apply(
-                            lambda peptides: peptide in peptides)]
-
-                for _, hit in hits.iterrows():
-                    index = hit['CodeName'].index(peptide)
+                hits = subtypes.loc[subtypes['CodeName'].apply(
+                            lambda peptides: peptide in peptides
+                        )]
+                print(hits)
+                def _count_uncollapsed(hit):
+                    print(hit)
+                    index = hit.name.index(peptide)
                     subtype = hit['Subtype'][index]
                     species_subtype = f'{species}:{subtype}'
                     # NOTE: If this is uncollapsed the epitope will just be the
@@ -191,30 +175,68 @@ def enriched_subtypes(
                     # collapsed for instance)
                     epitope = 'uncollapsed'
 
-                    found_split_value = \
-                        _find_split_value(hit, split_column, index)
-                    _count_enriched(counts, species, species_subtype, epitope,
-                                    found_split_value)
+                    found_split_value = _find_split_value(
+                        hit, split_column, index
+                    )
+                    _count_enriched(
+                        counts, species, species_subtype, epitope,
+                        found_split_value
+                    )
+                hits.apply(_count_uncollapsed, axis=1)
             else:
                 # collapsed
                 epitope = enriched
                 hit = subtypes.loc[epitope]
-                for index, (peptide, subtype) in enumerate(
-                        zip(hit['CodeName'], hit['Subtype'])):
+                for index, subtype in enumerate(hit['Subtype']):
                     species_subtype = f'{species}:{subtype}'
 
-                    found_split_value = \
-                        _find_split_value(hit, split_column, index)
-                    _count_enriched(counts, species, species_subtype, epitope,
-                                    found_split_value)
+                    found_split_value = _find_split_value(
+                        hit, split_column, index
+                    )
+                    _count_enriched(
+                        counts, species, species_subtype, epitope,
+                        found_split_value
+                    )
 
+    filtered_scores.apply(_count, axis=1)
     for key, value in counts.items():
-        _sorted = \
-            dict(sorted(value.items(), key=lambda item: item[1], reverse=True))
-        counts[key] = \
-            pd.DataFrame({'Counts': _sorted.values()}, index=_sorted.keys())
+        _sorted = dict(
+            sorted(value.items(), key=lambda item: item[1], reverse=True)
+        )
+        counts[key] = pd.DataFrame(
+            {'Counts': _sorted.values()}, index=_sorted.keys()
+        )
 
     return counts
+
+
+def _get_keys(subtypes, split_column, default_keys):
+    if split_column not in subtypes:
+        raise KeyError(
+            f"The requested split_column: '{split_column}' does not "
+            f"exist. Valid columns are: {list(subtypes.columns)}"
+        )
+
+    # If we a split_column our keys need to be the product of the possible
+    # split column values and the existing default keys.
+    split_values = subtypes[split_column].unique()
+    new_keys = []
+    for value in split_values:
+        for key in default_keys:
+            new_keys.append(f'{value}-{key}')
+
+    return new_keys
+
+
+def _filter_scores(scores, p_value, enrichment_score,
+                   include_negative_enrichment):
+    scores = pd.concat(list(scores.values()))
+    scores = scores.loc[scores['p.adjust'] <= p_value]
+
+    if include_negative_enrichment:
+        return scores.loc[abs(scores['enrichmentScore'] >= enrichment_score)]
+
+    return scores.loc[scores['enrichmentScore'] >= enrichment_score]
 
 
 def _find_split_value(hit, split_column, index):
@@ -242,8 +264,7 @@ def _count_enriched(counts, species, species_subtype, epitope,
     split_subtype = f'{found_split_value}subspecies'
     found_split_subtype = f'{found_split_value}{species_subtype}'
 
-    if not found_split_subtype in \
-            counts[split_subtype]:
+    if not found_split_subtype in counts[split_subtype]:
         counts[split_subtype][found_split_subtype] = 0
     counts[split_subtype][found_split_subtype] += 1
 
