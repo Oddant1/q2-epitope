@@ -189,7 +189,7 @@ def enriched_subtypes(
                     # NOTE: If this is uncollapsed the epitope will just be the
                     # peptide (if this is a bacterium and bacteria was not
                     # collapsed for instance)
-                    epitope = hit.name
+                    epitope = 'uncollapsed'
 
                     found_split_value = \
                         _find_split_value(hit, split_column, index)
@@ -232,8 +232,7 @@ def _count_enriched(counts, species, species_subtype, epitope, peptide,
                     found_split_value):
     # Track species and peptide including split value if relevant
     split_species_peptide = f'{found_split_value}species-peptide'
-    found_split_species_peptide = \
-        f'{found_split_value}{species}-{peptide}'
+    found_split_species_peptide = f'{found_split_value}{species}'
 
     if not found_split_species_peptide in \
             counts[split_species_peptide]:
@@ -243,8 +242,7 @@ def _count_enriched(counts, species, species_subtype, epitope, peptide,
 
     # Track species and epitope including split value if relevant
     split_species_epitope = f'{found_split_value}species-epitope'
-    found_split_species_epitope = \
-        f'{found_split_value}{species}-{epitope}'
+    found_split_species_epitope = f'{found_split_value}{species}-{epitope}'
 
     if not found_split_species_epitope in \
             counts[split_species_epitope]:
@@ -255,10 +253,9 @@ def _count_enriched(counts, species, species_subtype, epitope, peptide,
     # Track subspecies and peptide including split value if
     # relevant
     split_sub_peptide = f'{found_split_value}subspecies-peptide'
-    found_split_sub_peptide = \
-        f'{found_split_value}{species_subtype}-{peptide}'
+    found_split_sub_peptide = f'{found_split_value}{species_subtype}'
 
-    if not found_split_species_peptide in \
+    if not found_split_sub_peptide in \
             counts[split_sub_peptide]:
         counts[split_sub_peptide][found_split_sub_peptide] = 0
     counts[split_sub_peptide][found_split_sub_peptide] += 1
