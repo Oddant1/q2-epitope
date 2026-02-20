@@ -166,16 +166,18 @@ def enriched_subtypes(
                         )]
 
                 def _count_uncollapsed(hit):
-                    index = hit.name.index(peptide)
-                    subtype = hit['Subtype'][index]
+                    subtype = hit['Subtype']
                     species_subtype = f'{species}:{subtype}'
                     # NOTE: If this is uncollapsed the epitope will just be the
                     # peptide (if this is a bacterium and bacteria was not
                     # collapsed for instance)
                     epitope = 'uncollapsed'
 
+                    # Since this is uncollapsed, we know we are looking at one
+                    # individual peptide. There won't be a list of subtypes and
+                    # all that here, so index is 0
                     found_split_value = _find_split_value(
-                        hit, split_column, index
+                        hit, split_column, index=0
                     )
                     _count_enriched(
                         counts, species, species_subtype, epitope,
